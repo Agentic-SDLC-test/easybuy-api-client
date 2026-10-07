@@ -1,0 +1,35 @@
+{
+  "name": "@agentic-sdlc-test/easybuy-api-client",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Agentic-SDLC-test/easybuy-api-client.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "default": "./dist/domain/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "lint": "echo \"No linter configured\" && exit 0",
+    "test": "npm run build && node --test"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
