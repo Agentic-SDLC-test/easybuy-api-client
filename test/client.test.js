@@ -179,6 +179,141 @@ test("a non-JSON body becomes an empty object", async () => {
   assert.deepEqual(result, {});
 });
 
+test("getProductReviews sends a GET with the encoded productId, no auth needed", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: { summary: {}, reviews: [] } }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => null,
+    onUnauthorized: () => {},
+  });
+  await client.getProductReviews("p 1");
+  restore();
+  assert.equal(seen.url, "http://example.test/product-reviews?productId=p%201");
+  assert.equal(seen.init.method, "GET");
+});
+
+test("getMyReview sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: { eligible: true, review: null } }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.getMyReview("p1");
+  restore();
+  assert.equal(seen.url, "http://example.test/my-review?productId=p1");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-1");
+});
+
+test("submitReview posts productId, rating, and comment", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: {} }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.submitReview("p1", 4, "Nice");
+  restore();
+  assert.equal(seen.url, "http://example.test/review");
+  assert.equal(seen.init.method, "POST");
+  assert.equal(seen.init.body, JSON.stringify({ productId: "p1", rating: 4, comment: "Nice" }));
+});
+
+test("submitReview defaults the comment to an empty string", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = init;
+    return { json: async () => ({ success: true, data: {} }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => null,
+    onUnauthorized: () => {},
+  });
+  await client.submitReview("p1", 5);
+  restore();
+  assert.equal(seen.body, JSON.stringify({ productId: "p1", rating: 5, comment: "" }));
+});
+
+test("getAdminReviews sends a GET to /admin/reviews", async () => {
+  let seenUrl;
+  const restore = installFetch(async (url) => {
+    seenUrl = url;
+    return { json: async () => ({ success: true, data: [] }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.getAdminReviews();
+  restore();
+  assert.equal(seenUrl, "http://example.test/admin/reviews");
+});
+
+test("updateReviewVisibility posts reviewId and isVisible", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: {} }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.updateReviewVisibility("r1", false);
+  restore();
+  assert.equal(seen.url, "http://example.test/admin/review-visibility");
+  assert.equal(seen.init.body, JSON.stringify({ reviewId: "r1", isVisible: false }));
+});
+
+test("deleteReview posts reviewId", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.deleteReview("r1");
+  restore();
+  assert.equal(seen.url, "http://example.test/admin/delete-review");
+  assert.equal(seen.init.body, JSON.stringify({ reviewId: "r1" }));
+});
+
+test("jwt expired on submitReview still triggers onUnauthorized", async () => {
+  let loggedOut = false;
+  const restore = installFetch(async () => ({
+    json: async () => ({ err: "jwt expired" }),
+  }));
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "old",
+    onUnauthorized: async () => {
+      loggedOut = true;
+    },
+  });
+  await client.submitReview("p1", 3);
+  restore();
+  assert.equal(loggedOut, true);
+});
+
 test("a rejected fetch rejects the call", async () => {
   const restore = installFetch(async () => {
     throw new Error("network down");
