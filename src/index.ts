@@ -91,5 +91,15 @@ export function createClient(config: ClientConfig) {
     getDashboard: () => request("GET", paths.dashboard),
     getUsers: () => request("GET", paths.users),
     uploadPhoto: (formData: FormData) => request("POST", paths.upload, formData),
+    getProductReviews: (productId: unknown) =>
+      request("GET", `${paths.productReviews}?productId=${queryValue(productId)}`),
+    getMyReview: (productId: unknown) =>
+      request("GET", `${paths.myReview}?productId=${queryValue(productId)}`),
+    submitReview: (productId: unknown, rating: number, comment = "") =>
+      request("POST", paths.review, { productId, rating, comment }),
+    getAdminReviews: () => request("GET", paths.adminReviews),
+    updateReviewVisibility: (reviewId: unknown, isVisible: boolean) =>
+      request("POST", paths.reviewVisibility, { reviewId, isVisible }),
+    deleteReview: (reviewId: unknown) => request("POST", paths.deleteReview, { reviewId }),
   };
 }

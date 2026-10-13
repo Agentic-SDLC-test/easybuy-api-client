@@ -5,9 +5,11 @@ const {
   validateSignup,
   validateProduct,
   validateCategory,
+  validateReview,
   UserType,
   OrderStatus,
   PaymentType,
+  ReviewRules,
 } = require("../dist/domain/index.js");
 
 const validLogin = { email: "ab@cde", password: "123456" };
@@ -100,4 +102,29 @@ test("validateCategory returns the first failing message", () => {
     "Please upload the Catergory image"
   );
   assert.equal(validateCategory({ title: "Hats", description: "x", image: "a.png" }), null);
+});
+
+test("ReviewRules matches the server's rating and comment limits", () => {
+  assert.equal(ReviewRules.MIN_RATING, 1);
+  assert.equal(ReviewRules.MAX_RATING, 5);
+  assert.equal(ReviewRules.COMMENT_MAX_LENGTH, 500);
+});
+
+test("validateReview rejects an out-of-range, fractional, or missing rating", () => {
+  assert.equal(validateReview({ rating: 0 }), "Please select a star rating");
+  assert.equal(validateReview({ rating: 6 }), "Please select a star rating");
+  assert.equal(validateReview({ rating: 2.5 }), "Please select a star rating");
+  assert.equal(validateReview({ rating: undefined }), "Please select a star rating");
+});
+
+test("validateReview rejects a comment over 500 characters", () => {
+  assert.equal(
+    validateReview({ rating: 5, comment: "a".repeat(501) }),
+    "Review must be 500 characters or fewer"
+  );
+});
+
+test("validateReview accepts a valid rating with no comment, and at the boundaries", () => {
+  assert.equal(validateReview({ rating: 1 }), null);
+  assert.equal(validateReview({ rating: 5, comment: "a".repeat(500) }), null);
 });
