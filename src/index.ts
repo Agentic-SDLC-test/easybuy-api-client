@@ -91,5 +91,30 @@ export function createClient(config: ClientConfig) {
     getDashboard: () => request("GET", paths.dashboard),
     getUsers: () => request("GET", paths.users),
     uploadPhoto: (formData: FormData) => request("POST", paths.upload, formData),
+    getProductReviews: (productId: unknown, options: { limit?: number; skip?: number } = {}) =>
+      request(
+        "GET",
+        `${paths.productReviews}?productId=${queryValue(productId)}&limit=${queryValue(
+          options.limit ?? 5
+        )}&skip=${queryValue(options.skip ?? 0)}`
+      ),
+    getMyReview: (productId: unknown) =>
+      request("GET", `${paths.myReview}?productId=${queryValue(productId)}`),
+    createReview: (payload: { productId: unknown; rating: number; text?: string }) =>
+      request("POST", paths.review, payload),
+    updateReview: (id: unknown, payload: { rating: number; text?: string }) =>
+      request("POST", `${paths.updateReview}?id=${queryValue(id)}`, payload),
+    getAdminReviews: (
+      options: { visibility?: "all" | "visible" | "hidden"; limit?: number; skip?: number } = {}
+    ) =>
+      request(
+        "GET",
+        `${paths.adminReviews}?visibility=${queryValue(
+          options.visibility ?? "all"
+        )}&limit=${queryValue(options.limit ?? 20)}&skip=${queryValue(options.skip ?? 0)}`
+      ),
+    setReviewVisibility: (id: unknown, hidden: boolean) =>
+      request("POST", `${paths.reviewVisibility}?id=${queryValue(id)}&hidden=${queryValue(hidden)}`),
+    deleteReview: (id: unknown) => request("POST", `${paths.deleteReview}?id=${queryValue(id)}`),
   };
 }
