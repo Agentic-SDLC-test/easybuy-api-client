@@ -5,9 +5,12 @@ const {
   validateSignup,
   validateProduct,
   validateCategory,
+  validateReview,
   UserType,
   OrderStatus,
   PaymentType,
+  ReviewEligibility,
+  paths,
 } = require("../dist/domain/index.js");
 
 const validLogin = { email: "ab@cde", password: "123456" };
@@ -100,4 +103,36 @@ test("validateCategory returns the first failing message", () => {
     "Please upload the Catergory image"
   );
   assert.equal(validateCategory({ title: "Hats", description: "x", image: "a.png" }), null);
+});
+
+test("ReviewEligibility exposes the three eligibility states", () => {
+  assert.equal(ReviewEligibility.ELIGIBLE, "eligible");
+  assert.equal(ReviewEligibility.NOT_DELIVERED, "not_delivered");
+  assert.equal(ReviewEligibility.NOT_PURCHASED, "not_purchased");
+});
+
+test("paths exposes the new review routes with exact string values", () => {
+  assert.equal(paths.productReviews, "/product-reviews");
+  assert.equal(paths.myReview, "/my-review");
+  assert.equal(paths.review, "/review");
+  assert.equal(paths.updateReview, "/update-review");
+  assert.equal(paths.adminReviews, "/admin/reviews");
+  assert.equal(paths.reviewVisibility, "/admin/review-visibility");
+  assert.equal(paths.deleteReview, "/admin/delete-review");
+});
+
+test("validateReview returns the first failing message", () => {
+  assert.equal(validateReview({}), "Please select a star rating from 1 to 5");
+  assert.equal(validateReview({ rating: 0 }), "Please select a star rating from 1 to 5");
+  assert.equal(validateReview({ rating: 6 }), "Please select a star rating from 1 to 5");
+  assert.equal(validateReview({ rating: 4.5 }), "Please select a star rating from 1 to 5");
+  assert.equal(
+    validateReview({ rating: 5, text: "x".repeat(501) }),
+    "Review text must be 500 characters or fewer"
+  );
+  assert.equal(
+    validateReview({ rating: 5, text: `  ${"x".repeat(500)}  ` }),
+    null
+  );
+  assert.equal(validateReview({ rating: 5 }), null);
 });

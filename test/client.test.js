@@ -191,3 +191,171 @@ test("a rejected fetch rejects the call", async () => {
   await assert.rejects(() => client.getProducts(), /network down/);
   restore();
 });
+
+test("getProductReviews defaults limit and skip and sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: [] }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.getProductReviews("p1");
+  restore();
+  assert.equal(seen.url, "http://example.test/product-reviews?productId=p1&limit=5&skip=0");
+  assert.equal(seen.init.method, "GET");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-1");
+});
+
+test("getProductReviews honors custom limit and skip", async () => {
+  let seenUrl;
+  const restore = installFetch(async (url) => {
+    seenUrl = url;
+    return { json: async () => ({ success: true, data: [] }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.getProductReviews("p1", { limit: 10, skip: 20 });
+  restore();
+  assert.equal(seenUrl, "http://example.test/product-reviews?productId=p1&limit=10&skip=20");
+});
+
+test("getMyReview sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: null }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.getMyReview("p1");
+  restore();
+  assert.equal(seen.url, "http://example.test/my-review?productId=p1");
+  assert.equal(seen.init.method, "GET");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-1");
+});
+
+test("createReview posts JSON and sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.createReview({ productId: "p1", rating: 5, text: "Great" });
+  restore();
+  assert.equal(seen.url, "http://example.test/review");
+  assert.equal(seen.init.method, "POST");
+  assert.equal(headerValue(seen.init, "content-type"), "application/json");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-1");
+  assert.equal(
+    seen.init.body,
+    JSON.stringify({ productId: "p1", rating: 5, text: "Great" })
+  );
+});
+
+test("updateReview posts JSON to the id-qualified path and sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-1",
+    onUnauthorized: () => {},
+  });
+  await client.updateReview("r1", { rating: 4, text: "Updated" });
+  restore();
+  assert.equal(seen.url, "http://example.test/update-review?id=r1");
+  assert.equal(seen.init.method, "POST");
+  assert.equal(headerValue(seen.init, "content-type"), "application/json");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-1");
+  assert.equal(seen.init.body, JSON.stringify({ rating: 4, text: "Updated" }));
+});
+
+test("getAdminReviews defaults visibility, limit, and skip and sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true, data: [] }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-admin",
+    onUnauthorized: () => {},
+  });
+  await client.getAdminReviews();
+  restore();
+  assert.equal(seen.url, "http://example.test/admin/reviews?visibility=all&limit=20&skip=0");
+  assert.equal(seen.init.method, "GET");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-admin");
+});
+
+test("getAdminReviews honors custom visibility, limit, and skip", async () => {
+  let seenUrl;
+  const restore = installFetch(async (url) => {
+    seenUrl = url;
+    return { json: async () => ({ success: true, data: [] }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-admin",
+    onUnauthorized: () => {},
+  });
+  await client.getAdminReviews({ visibility: "hidden", limit: 50, skip: 10 });
+  restore();
+  assert.equal(
+    seenUrl,
+    "http://example.test/admin/reviews?visibility=hidden&limit=50&skip=10"
+  );
+});
+
+test("setReviewVisibility posts to the id- and hidden-qualified path and sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-admin",
+    onUnauthorized: () => {},
+  });
+  await client.setReviewVisibility("r1", true);
+  restore();
+  assert.equal(seen.url, "http://example.test/admin/review-visibility?id=r1&hidden=true");
+  assert.equal(seen.init.method, "POST");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-admin");
+});
+
+test("deleteReview posts to the id-qualified path and sends the auth token", async () => {
+  let seen;
+  const restore = installFetch(async (url, init) => {
+    seen = { url, init };
+    return { json: async () => ({ success: true }) };
+  });
+  const client = createClient({
+    baseUrl: "http://example.test",
+    getToken: async () => "jwt-admin",
+    onUnauthorized: () => {},
+  });
+  await client.deleteReview("r1");
+  restore();
+  assert.equal(seen.url, "http://example.test/admin/delete-review?id=r1");
+  assert.equal(seen.init.method, "POST");
+  assert.equal(headerValue(seen.init, "x-auth-token"), "jwt-admin");
+});

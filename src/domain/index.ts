@@ -37,7 +37,22 @@ export const paths = {
   dashboard: "/dashboard",
   users: "/admin/users",
   upload: "/photos/upload",
+  productReviews: "/product-reviews",
+  myReview: "/my-review",
+  review: "/review",
+  updateReview: "/update-review",
+  adminReviews: "/admin/reviews",
+  reviewVisibility: "/admin/review-visibility",
+  deleteReview: "/admin/delete-review",
 } as const;
+
+export const ReviewEligibility = {
+  ELIGIBLE: "eligible",
+  NOT_DELIVERED: "not_delivered",
+  NOT_PURCHASED: "not_purchased",
+} as const;
+
+export const REVIEW_TEXT_MAX = 500;
 
 export function validateLogin(input: { email: string; password: string }): string | null {
   const { email, password } = input;
@@ -89,5 +104,15 @@ export function validateCategory(input: {
   if (title == "") return "Please enter the product title";
   if (description == "") return "Please upload the product image";
   if (image == null) return "Please upload the Catergory image";
+  return null;
+}
+
+export function validateReview(input: { rating: number; text?: string }): string | null {
+  if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
+    return "Please select a star rating from 1 to 5";
+  }
+  if ((input.text ?? "").trim().length > REVIEW_TEXT_MAX) {
+    return "Review text must be 500 characters or fewer";
+  }
   return null;
 }
