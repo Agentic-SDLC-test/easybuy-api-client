@@ -14,6 +14,12 @@ export const PaymentType = {
   ONLINE: "online",
 } as const;
 
+export const PaymentStatus = {
+  PENDING: "pending",
+  PAID: "paid",
+  FAILED: "failed",
+} as const;
+
 export const paths = {
   register: "/register",
   login: "/login",
