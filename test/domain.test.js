@@ -8,6 +8,7 @@ const {
   UserType,
   OrderStatus,
   PaymentType,
+  PaymentStatus,
 } = require("../dist/domain/index.js");
 
 const validLogin = { email: "ab@cde", password: "123456" };
@@ -20,6 +21,9 @@ test("constants match the server strings", () => {
   assert.equal(OrderStatus.DELIVERED, "delivered");
   assert.equal(PaymentType.COD, "cod");
   assert.equal(PaymentType.ONLINE, "online");
+  assert.equal(PaymentStatus.PENDING, "pending");
+  assert.equal(PaymentStatus.PAID, "paid");
+  assert.equal(PaymentStatus.FAILED, "failed");
 });
 
 test("validateLogin returns the first failing message", () => {
